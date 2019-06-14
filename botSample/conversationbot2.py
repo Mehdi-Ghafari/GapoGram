@@ -146,7 +146,10 @@ def main():
 
         # fallbacks=[RegexHandler('^Done$', done, pass_user_data=True)]
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done, pass_user_data=True)]
+
+
     )
+    print(CHOOSING)
 
     dp.add_handler(conv_handler)
 

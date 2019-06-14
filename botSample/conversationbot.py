@@ -133,7 +133,7 @@ def main():
 
         states={
             # GENDER: [RegexHandler('^(Boy|Girl|Other)$', gender)],
-            GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
+            GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|sex)$'), gender)],
 
             PHOTO: [MessageHandler(Filters.photo, photo),
                     CommandHandler('skip', skip_photo)],

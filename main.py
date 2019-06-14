@@ -1,70 +1,70 @@
 #!/usr/bin/env python
 # -*- coding: windows-1256 -*-
 
-# This program is dedicated to the public domain under the CC0 license.
-#
-# THIS EXAMPLE HAS BEEN UPDATED TO WORK WITH THE BETA VERSION 12 OF PYTHON-TELEGRAM-BOT.
-# If you're still using version 11.1.0, please see the examples at
-# https://github.com/python-telegram-bot/python-telegram-bot/tree/v11.1.0/examples
-
-"""
-First, a few callback functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Example of a bot-user conversation using ConversationHandler.
-Send /start to initiate the conversation.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
 import logging
 import os
 import re
-
 import cx_Oracle
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler)
+                          ConversationHandler, CallbackQueryHandler)
 
-# Enable logging
+from Logger import Logger
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+__level__ = logging.INFO
+logger = logging.getLogger(__name__)
+
+START = range(1)
+GENDER, CHOOSING, PHOTO, LOCATION, BIO, TYPING_REPLY, TYPING_CHOICE = range(7)
+__LOGDIR__ = os.path.abspath("log")
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-GENDER, PHOTO, LOCATION, BIO = range(4)
+
+def clean_array(in_list):
+    regex = r"([\'\"\[\"])"
+    regex2 = r"([\'\"\]\")])"
+    matches = re.sub(regex, '\n', str(in_list))
+    matches2 = re.sub(regex2, '\n', matches)
+    v_rec_list = matches2.replace("\n", "")
+
+    return v_rec_list
 
 
-# connection = cx_Oracle.connect('PYTHONDEMO', 'Zz123456', 'SHAHMERZA_PDB_SSL')
-
+# region START
 def start(update, context):
-    connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
-    cursor = connection.cursor()
+    try:
+        connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
+        cursor = connection.cursor()
 
-    list_rep_key2 = []
-    sql_rep_key2 = """
-            select BTNTEXT from TBLREPLYKEYBOARD where merge = 1 and visible = 0
-            """
-    cursor.execute(sql_rep_key2)
+        list_rep_key2 = []
+        sql_rep_key2 = """
+                SELECT BTNTEXT FROM TBLREPLYKEYBOARD WHERE MERGE = 1 AND VISIBLE = 0
+                """
+        cursor.execute(sql_rep_key2)
+    except cx_Oracle.DatabaseError as e:
+        logger.warning("CONNECT to database Not Ok")
+        logger.error("Error Massage: " + str(e))
+        return None
 
     for result in cursor.fetchall():
         list_rep_key2.append(result[0])
         # print(list)
 
-    regex = r"([\'\"\[\"])"
-    regex2 = r"([\'\"\]\")])"
-    matches = re.sub(regex, '\n', str(list_rep_key2))
-    matches2 = re.sub(regex2, '\n', matches)
-    v_rec_list = matches2.replace("\n", "")
+    v_rec_list = clean_array(list_rep_key2)
     # print(v_rec_list)
 
     reply_keyboard_combine = v_rec_list.split(',')
 
     reply_keyboard_single = []
     sql_rep_key1 = """
-            select BTNTEXT from TBLREPLYKEYBOARD where merge = 0 and visible = 0
+            SELECT BTNTEXT FROM TBLREPLYKEYBOARD WHERE MERGE = 0 AND VISIBLE = 0
             """
     cursor.execute(sql_rep_key1)
 
@@ -77,17 +77,23 @@ def start(update, context):
     # print(type(reply_keyboard_single))
     # print(reply_keyboard_single)
 
+    # print(type(reply_keyboard_single))
 
     sql_start_msg = """
-            select MSG_START from TBLCONFIG where id = 1
+            SELECT MSG_START FROM TBLCONFIG WHERE ID = 1
             """
     cursor.execute(sql_start_msg)
     row_msg_cfg = cursor.fetchone()
+    reply_keyboard = [['Boy', 'Girl', 'Other']]
+    print(reply_keyboard_single)
+
     if row_msg_cfg is not None:
         # print(row_msg_cfg[0])
         update.message.reply_text(
             str(row_msg_cfg[0]),
             reply_markup=ReplyKeyboardMarkup(reply_keyboard_single, one_time_keyboard=True, resize_keyboard=True))
+            # reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+        # return GENDER
     else:
         print("nullable")
 
@@ -95,7 +101,20 @@ def start(update, context):
     connection.close()
 
     # return GENDER
+# endregion START
 
+# def start(update, context):
+#     reply_keyboard = [['Boy', 'Girl', 'Other']]
+#
+#     print(type(reply_keyboard))
+#
+#     update.message.reply_text(
+#         'Hi! My name is Professor Bot. I will hold a conversation with you. '
+#         'Send /cancel to stop talking to me.\n\n'
+#         'Are you a boy or a girl?',
+#         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+#
+#     return GENDER
 
 def gender(update, context):
     user = update.message.from_user
@@ -168,6 +187,19 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+def regular_choice(update, context):
+    text = update.message.text
+    context.user_data['choice'] = text
+    update.message.reply_text(
+        'Your {}? Yes, I would love to hear about that!'.format(text.lower()))
+
+    return TYPING_REPLY
+
+def custom_choice(update, context):
+    update.message.reply_text('Alright, please send me the category first, '
+                              'for example "Most impressive skill"')
+
+    return TYPING_CHOICE
 
 def main():
     # Create the Updater and pass it your bot's token.
@@ -179,26 +211,68 @@ def main():
     dp = updater.dispatcher
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
 
-        states={
-            # GENDER: [RegexHandler('^(Boy|Girl|Other)$', gender)],
-            GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
-
-            PHOTO: [MessageHandler(Filters.photo, photo),
-                    CommandHandler('skip', skip_photo)],
-
-            LOCATION: [MessageHandler(Filters.location, location, pass_user_data=True),
-                       CommandHandler('skip', skip_location)],
-
-            BIO: [MessageHandler(Filters.text, bio)]
-        },
-
-        fallbacks=[CommandHandler('cancel', cancel)]
+    start_conv_handler = ConversationHandler(entry_points=[CommandHandler('start', start)],
+                                             states={
+                                                 START: [CommandHandler('start', start)]
+                                             },
+                                             fallbacks = [CommandHandler('cancel', cancel)]
     )
 
-    dp.add_handler(conv_handler)
+    # conv_handler = ConversationHandler(
+    #     entry_points=[CommandHandler('start', start)],
+    #
+    #     states={
+    #         # GENDER: [MessageHandler(Filters.regex('^(»Â ?Â ‰«‘‰«” Ê’·„ ò‰! ?| ”òÂ ?| Å—Ê›«?· ?| —«Â‰„« ?| „⁄—›? »Â œÊ” «‰??| Å?œ« ò—œ‰ «›—«œ ‰“œ?ò »« GPS ?)$'), gender)],
+    #         GENDER: [MessageHandler(Filters.text, gender)],
+    #
+    #         PHOTO: [MessageHandler(Filters.photo, photo),
+    #                 CommandHandler('skip', skip_photo)],
+    #
+    #         LOCATION: [MessageHandler(Filters.location, location, pass_user_data=True),
+    #                    CommandHandler('skip', skip_location)],
+    #
+    #         BIO: [MessageHandler(Filters.text, bio)]
+    #     },
+    #
+    #     fallbacks=[CommandHandler('cancel', cancel)]
+    # )
+
+
+
+    dp.add_handler(start_conv_handler)
+
+
+
+    # dp.add_handler(start_conv_handler)
+
+    try:
+        connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
+        cursor = connection.cursor()
+
+        list_rep_res2 = []
+        sql_rep_res2 = """
+            SELECT trim(regexp_substr(BTNTEXT, '[^,]+', 1, LEVEL)) str_2_tab, callfunc
+                FROM TBLREPLYKEYBOARD
+                CONNECT BY LEVEL <=
+                    LENGTH(BTNTEXT) - 
+                    LENGTH(REPLACE(BTNTEXT, ',', ''))
+                    + 1
+                """
+        cursor.execute(sql_rep_res2)
+
+        for result in cursor.fetchall():
+            # list_rep_res2.append(result[0])
+            dp.add_handler(MessageHandler(Filters.regex(result[0]), eval(result[1])))
+
+        v_rec_list = clean_array(list_rep_res2)
+        print(v_rec_list)
+
+    except cx_Oracle.DatabaseError as e:
+        logger.warning("CONNECT to database Not Ok")
+        logger.error("Error Massage: " + str(e))
+
+        return None
 
     # log all errors
     dp.add_error_handler(error)
@@ -210,7 +284,6 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     # updater.idle()
-
 
 if __name__ == '__main__':
     os.environ["NLS_LANG"] = "AMERICAN_AMERICA.AL32UTF8"
