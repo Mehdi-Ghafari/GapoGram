@@ -37,7 +37,7 @@ def clean_array(in_list):
     return v_rec_list
 
 
-# region START
+# region command/start
 def start(update, context):
     try:
         connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
@@ -101,8 +101,7 @@ def start(update, context):
     connection.close()
 
     # return GENDER
-# endregion START
-
+# endregion command/start
 
 
 def cancel(update, context):
@@ -132,9 +131,12 @@ def custom_choice(update, context):
 
     return TYPING_CHOICE
 
-def echo(update, context):
+# region command/echoMSG
+def echoMSG(update, context):
     update.message.reply_text("hi")
+# endregion command/echoMSG
 
+# region MainFunc
 def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
@@ -193,6 +195,7 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+# endregion MainFunc
 
 if __name__ == '__main__':
     os.environ["NLS_LANG"] = "AMERICAN_AMERICA.AL32UTF8"
