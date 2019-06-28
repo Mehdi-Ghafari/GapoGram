@@ -219,32 +219,7 @@ def main():
                                              fallbacks = [CommandHandler('cancel', cancel)]
     )
 
-    # conv_handler = ConversationHandler(
-    #     entry_points=[CommandHandler('start', start)],
-    #
-    #     states={
-    #         # GENDER: [MessageHandler(Filters.regex('^(»Â ?Â ‰«‘‰«” Ê’·„ ò‰! ?| ”òÂ ?| Å—Ê›«?· ?| —«Â‰„« ?| „⁄—›? »Â œÊ” «‰??| Å?œ« ò—œ‰ «›—«œ ‰“œ?ò »« GPS ?)$'), gender)],
-    #         GENDER: [MessageHandler(Filters.text, gender)],
-    #
-    #         PHOTO: [MessageHandler(Filters.photo, photo),
-    #                 CommandHandler('skip', skip_photo)],
-    #
-    #         LOCATION: [MessageHandler(Filters.location, location, pass_user_data=True),
-    #                    CommandHandler('skip', skip_location)],
-    #
-    #         BIO: [MessageHandler(Filters.text, bio)]
-    #     },
-    #
-    #     fallbacks=[CommandHandler('cancel', cancel)]
-    # )
-
-
-
     dp.add_handler(start_conv_handler)
-
-
-
-    # dp.add_handler(start_conv_handler)
 
     try:
         connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
