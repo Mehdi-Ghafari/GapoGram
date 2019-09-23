@@ -26,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 db_ip = '192.168.1.3'
 db_port = 1521
-db_sid = 'ORCLCDB'
-dsn_tns = cx_Oracle.makedsn(db_ip, db_port, db_sid)
+db_sid = 'ORCLPDB1'
+dsn_tns = cx_Oracle.makedsn(db_ip, db_port, db_sid).replace('SID', 'SERVICE_NAME')
 db_user = 'gapogram'
 db_pass = 'Zz123456'
+
 
 def clean_array(in_list):
     regex = r"([\'\"\[\"])"
@@ -96,7 +97,7 @@ def start(update, context):
         update.message.reply_text(
             str(row_msg_cfg[0]),
             reply_markup=ReplyKeyboardMarkup(reply_keyboard_single, one_time_keyboard=True, resize_keyboard=True))
-            # reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+        # reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
         # return GENDER
     else:
         print("nullable")
@@ -105,6 +106,8 @@ def start(update, context):
     connection.close()
 
     # return GENDER
+
+
 # endregion command/start
 
 
@@ -121,6 +124,7 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+
 def regular_choice(update, context):
     text = update.message.text
     context.user_data['choice'] = text
@@ -129,15 +133,19 @@ def regular_choice(update, context):
 
     return TYPING_REPLY
 
+
 def custom_choice(update, context):
     update.message.reply_text('Alright, please send me the category first, '
                               'for example "Most impressive skill"')
 
     return TYPING_CHOICE
 
+
 # region command/echoMSG
 def echoMSG(update, context):
     update.message.reply_text("hi")
+
+
 # endregion command/echoMSG
 
 # region MainFunc
@@ -145,7 +153,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater("425486741:AAHCZTY806ugaWHjc56cfqGHvcFTwfAkpE4", use_context=True)
+    updater = Updater("963128068:AAEBL6nhSsOlfRgNdiMEPWc6MkDBl8ARqDY", use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -156,8 +164,8 @@ def main():
                                              states={
                                                  START: [CommandHandler('start', start)]
                                              },
-                                             fallbacks = [CommandHandler('cancel', cancel)]
-    )
+                                             fallbacks=[CommandHandler('cancel', cancel)]
+                                             )
 
     dp.add_handler(start_conv_handler)
 
@@ -178,6 +186,7 @@ def main():
 
         for result in cursor.fetchall():
             # list_rep_res2.append(result[0])
+            print(result)
             dp.add_handler(MessageHandler(Filters.regex(result[0]), eval(result[1])))
 
         v_rec_list = clean_array(list_rep_res2)
@@ -199,6 +208,8 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+
+
 # endregion MainFunc
 
 if __name__ == '__main__':
