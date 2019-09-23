@@ -4,12 +4,10 @@
 import logging
 import os
 import re
+
 import cx_Oracle
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler, CallbackQueryHandler)
-
-from Logger import Logger
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -26,6 +24,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
+db_ip = '192.168.1.3'
+db_port = 1521
+db_sid = 'ORCLCDB'
+dsn_tns = cx_Oracle.makedsn(db_ip, db_port, db_sid)
+db_user = 'gapogram'
+db_pass = 'Zz123456'
 
 def clean_array(in_list):
     regex = r"([\'\"\[\"])"
@@ -40,7 +44,7 @@ def clean_array(in_list):
 # region command/start
 def start(update, context):
     try:
-        connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
+        connection = cx_Oracle.connect(db_user, db_pass, dsn_tns)
         cursor = connection.cursor()
 
         list_rep_key2 = []
@@ -158,7 +162,7 @@ def main():
     dp.add_handler(start_conv_handler)
 
     try:
-        connection = cx_Oracle.connect('pdbadmin', 'Zz123456', 'PY_PDB')
+        connection = cx_Oracle.connect(db_user, db_pass, dsn_tns)
         cursor = connection.cursor()
 
         list_rep_res2 = []
